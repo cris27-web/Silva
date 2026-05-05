@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../components/layout/BaseLayout.astro";
+import { services } from "../data/services";
+import { reviews } from "../data/reviews";
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Cash-free cleaning for modern homes</p>
+      <h1>Silva Cleaning</h1>
+      <p class="hero-text">Book reliable home, deep, and end-of-tenancy cleaning in a few taps. Clear prices, fast confirmation, and secure online payments.</p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="/booking">Book a clean</a>
+        <a class="button button-secondary" href="/services">View services</a>
+      </div>
+      <div class="trust-row" aria-label="Service highlights">
+        <span>Online payments</span>
+        <span>Mobile-first booking</span>
+        <span>Reviewed cleaners</span>
+      </div>
+    </div>
+    <div class="hero-media" aria-label="Cleaner preparing a bright kitchen">
+      <div class="shine-line"></div>
+      <div class="hero-badge">
+        <strong>4.9/5</strong>
+        <span>Average review</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-heading">
+      <p class="eyebrow">Services</p>
+      <h2>Pick the clean that fits the job</h2>
+    </div>
+    <div class="service-grid">
+      {services.map((service) => (
+        <article class="service-card">
+          <div>
+            <h3>{service.name}</h3>
+            <p>{service.description}</p>
+          </div>
+          <ul>
+            {service.highlights.map((item) => <li>{item}</li>)}
+          </ul>
+          <div class="card-footer">
+            <span>From GBP {service.basePrice}</span>
+            <a href={`/booking?service=${service.id}`}>Book</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="section split-band reveal">
+    <div>
+      <p class="eyebrow">How it works</p>
+      <h2>Simple enough to finish on your phone</h2>
+    </div>
+    <div class="steps">
+      <div><span>1</span><strong>Choose service</strong><p>Select a regular, deep, or tenancy clean.</p></div>
+      <div><span>2</span><strong>Pick a slot</strong><p>Choose a date and time that works for you.</p></div>
+      <div><span>3</span><strong>Pay online</strong><p>Confirm securely through Stripe Checkout.</p></div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="section-heading">
+      <p class="eyebrow">Reviews</p>
+      <h2>Built around trust</h2>
+    </div>
+    <div class="review-grid">
+      {reviews.map((review) => (
+        <article class="review-card">
+          <div class="stars">★★★★★</div>
+          <p>"{review.text}"</p>
+          <strong>{review.name}</strong>
+          <span>{review.area}</span>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

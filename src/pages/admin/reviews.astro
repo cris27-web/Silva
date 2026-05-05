@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import AdminDashboard from "../../components/admin/AdminDashboard";
+---
+
+<BaseLayout title="Review Admin | Silva Cleaning">
+  <section class="page-hero compact">
+    <p class="eyebrow">Admin</p>
+    <h1>Reviews</h1>
+    <p>Review moderation is scaffolded in the functions and database schema.</p>
+  </section>
+  <section class="section admin-shell">
+    <AdminDashboard client:load />
+  </section>
+</BaseLayout>

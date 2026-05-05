@@ -1,0 +1,68 @@
+---
+import "../../styles/global.css";
+
+const {
+  title = "Silva Cleaning",
+  description = "Modern, reliable cleaning services with simple online booking."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Silva Cleaning home">
+        <span class="brand-mark">SC</span>
+        <span>Silva Cleaning</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="/services">Services</a>
+        <a href="/reviews">Reviews</a>
+        <a href="/contact">Contact</a>
+        <a href="/admin">Admin</a>
+      </nav>
+      <a class="header-cta" href="/booking">Book now</a>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div>
+        <strong>Silva Cleaning</strong>
+        <p>Cash-free domestic and tenancy cleaning with online booking.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/booking">Book cleaning</a>
+        <a href="/services">Services</a>
+        <a href="/reviews">Reviews</a>
+      </div>
+    </footer>
+    <script>
+      const revealItems = document.querySelectorAll(".reveal, .service-card, .review-card, .contact-card, .booking-panel, .booking-summary");
+
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-visible");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          { threshold: 0.14 }
+        );
+
+        revealItems.forEach((item) => observer.observe(item));
+      } else {
+        revealItems.forEach((item) => item.classList.add("is-visible"));
+      }
+    </script>
+  </body>
+</html>

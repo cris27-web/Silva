@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../components/layout/BaseLayout.astro";
+import BookingApp from "../components/booking/BookingApp";
+---
+
+<BaseLayout title="Book Cleaning | Silva Cleaning">
+  <section class="page-hero compact">
+    <p class="eyebrow">Book online</p>
+    <h1>Book your cleaning slot</h1>
+    <p>Choose a service, add the details, and confirm online. Demo mode works until Supabase and Stripe keys are added.</p>
+  </section>
+  <section class="section booking-shell reveal">
+    <BookingApp client:load />
+  </section>
+</BaseLayout>

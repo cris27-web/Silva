@@ -1,0 +1,29 @@
+---
+import BaseLayout from "../components/layout/BaseLayout.astro";
+import { services } from "../data/services";
+---
+
+<BaseLayout title="Services | Silva Cleaning">
+  <section class="page-hero compact">
+    <p class="eyebrow">Services</p>
+    <h1>Clear options, clear prices</h1>
+    <p>Start with a service, add property details during booking, and confirm online.</p>
+  </section>
+  <section class="section reveal">
+    <div class="service-grid">
+      {services.map((service) => (
+        <article class="service-card large">
+          <h2>{service.name}</h2>
+          <p>{service.description}</p>
+          <ul>
+            {service.highlights.map((item) => <li>{item}</li>)}
+          </ul>
+          <div class="card-footer">
+            <span>From GBP {service.basePrice} · {service.duration}</span>
+            <a href={`/booking?service=${service.id}`}>Book this clean</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

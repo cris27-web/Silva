@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import AdminDashboard from "../../components/admin/AdminDashboard";
+---
+
+<BaseLayout title="Admin | Silva Cleaning">
+  <section class="page-hero compact">
+    <p class="eyebrow">Admin</p>
+    <h1>Manage bookings</h1>
+    <p>Starter admin uses a simple access token. Switch to Supabase Auth before production.</p>
+  </section>
+  <section class="section admin-shell reveal">
+    <AdminDashboard client:load />
+  </section>
+</BaseLayout>

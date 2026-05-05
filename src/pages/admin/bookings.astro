@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../../components/layout/BaseLayout.astro";
+import AdminDashboard from "../../components/admin/AdminDashboard";
+---
+
+<BaseLayout title="Bookings | Silva Cleaning">
+  <section class="page-hero compact">
+    <p class="eyebrow">Admin</p>
+    <h1>Bookings</h1>
+    <p>Review upcoming jobs, payment state, and customer details.</p>
+  </section>
+  <section class="section admin-shell">
+    <AdminDashboard client:load />
+  </section>
+</BaseLayout>
