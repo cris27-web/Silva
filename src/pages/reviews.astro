@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from "../components/layout/BaseLayout.astro";
 import ReviewForm from "../components/reviews/ReviewForm";
 import { reviews } from "../data/reviews";
@@ -13,7 +13,7 @@ import { reviews } from "../data/reviews";
   <section class="section review-grid reveal">
     {reviews.map((review) => (
       <article class="review-card">
-        <div class="stars">★★★★★</div>
+        <div class="stars" aria-label="Five star review">*****</div>
         <p>"{review.text}"</p>
         <strong>{review.name}</strong>
         <span>{review.area}</span>

@@ -1,10 +1,22 @@
-import { createClient } from "@supabase/supabase-js";
+﻿import { createClient } from "@supabase/supabase-js";
 
 export type JsonResponse = {
   statusCode: number;
   headers: Record<string, string>;
   body: string;
 };
+
+type ServiceDefinition = {
+  id: string;
+  name: string;
+  basePrice: number;
+};
+
+export const serviceCatalog: ServiceDefinition[] = [
+  { id: "regular-clean", name: "Regular clean", basePrice: 45 },
+  { id: "deep-clean", name: "Deep clean", basePrice: 95 },
+  { id: "end-of-tenancy", name: "End of tenancy", basePrice: 145 }
+];
 
 export const json = (statusCode: number, data: unknown): JsonResponse => ({
   statusCode,
@@ -18,6 +30,24 @@ export const json = (statusCode: number, data: unknown): JsonResponse => ({
 export const parseBody = <T>(body: string | null): T => {
   if (!body) return {} as T;
   return JSON.parse(body) as T;
+};
+
+export const getService = (serviceId: string) => serviceCatalog.find((service) => service.id === serviceId);
+
+export const calculateBookingTotal = (serviceId: string, bedrooms: number, bathrooms: number) => {
+  const service = getService(serviceId);
+  if (!service) return null;
+
+  const safeBedrooms = Math.min(Math.max(Number(bedrooms) || 1, 1), 8);
+  const safeBathrooms = Math.min(Math.max(Number(bathrooms) || 1, 1), 6);
+  const roomCost = Math.max(0, safeBedrooms - 1) * 12 + Math.max(0, safeBathrooms - 1) * 10;
+
+  return {
+    service,
+    bedrooms: safeBedrooms,
+    bathrooms: safeBathrooms,
+    totalAmount: service.basePrice + roomCost
+  };
 };
 
 export const getSupabase = () => {
@@ -34,7 +64,7 @@ export const getSupabase = () => {
 
 export const requireAdmin = (authorization?: string) => {
   const configured = process.env.ADMIN_ACCESS_TOKEN;
-  if (!configured) return true;
+  if (!configured || configured === "change-me-before-deploy") return false;
   return authorization === `Bearer ${configured}`;
 };
 

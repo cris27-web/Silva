@@ -1,4 +1,4 @@
-import { CalendarDays, CreditCard, Home, Sparkles, UserRound } from "lucide-react";
+﻿import { CalendarDays, CheckCircle2, CreditCard, Home, Sparkles, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { services } from "../../data/services";
 
@@ -48,11 +48,27 @@ export default function BookingApp() {
     return service.basePrice + roomCost;
   }, [form.bathrooms, form.bedrooms, service.basePrice]);
 
+  const canSubmit = Boolean(
+    form.name.trim() &&
+    form.email.includes("@") &&
+    form.phone.trim() &&
+    form.address.trim() &&
+    form.postcode.trim() &&
+    form.date &&
+    form.time
+  );
+
   const update = (field: keyof BookingForm, value: string | number) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
   const submitBooking = async () => {
+    if (!canSubmit) {
+      setStatus("error");
+      setMessage("Add your contact, address, postcode, and phone before continuing.");
+      return;
+    }
+
     setStatus("loading");
     setMessage("");
 
@@ -60,7 +76,7 @@ export default function BookingApp() {
       const bookingResponse = await fetch("/api/create-booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, totalAmount: price, serviceName: service.name })
+        body: JSON.stringify({ ...form })
       });
 
       if (!bookingResponse.ok) throw new Error("Could not create booking");
@@ -69,7 +85,7 @@ export default function BookingApp() {
       const paymentResponse = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: booking.id, amount: price, serviceName: service.name })
+        body: JSON.stringify({ bookingId: booking.id })
       });
 
       if (!paymentResponse.ok) throw new Error("Could not start payment");
@@ -80,7 +96,7 @@ export default function BookingApp() {
         return;
       }
 
-      setMessage(payment.message || "Demo booking created. Add Stripe keys to enable online payment.");
+      setMessage(payment.message || "Your booking request is ready. The team will contact you to confirm payment and arrival details.");
       setStatus("idle");
     } catch (error) {
       setStatus("error");
@@ -105,7 +121,7 @@ export default function BookingApp() {
                 type="button"
               >
                 <strong>{item.name}</strong>
-                <span>From GBP {item.basePrice}</span>
+                <span>From GBP {item.basePrice} | {item.duration}</span>
               </button>
             ))}
           </div>
@@ -118,19 +134,19 @@ export default function BookingApp() {
           </div>
           <label>
             Bedrooms
-            <input min="1" type="number" value={form.bedrooms} onChange={(event) => update("bedrooms", Number(event.target.value))} />
+            <input min="1" max="8" type="number" value={form.bedrooms} required onChange={(event) => update("bedrooms", Number(event.target.value))} />
           </label>
           <label>
             Bathrooms
-            <input min="1" type="number" value={form.bathrooms} onChange={(event) => update("bathrooms", Number(event.target.value))} />
+            <input min="1" max="6" type="number" value={form.bathrooms} required onChange={(event) => update("bathrooms", Number(event.target.value))} />
           </label>
           <label className="full">
             Address
-            <input value={form.address} onChange={(event) => update("address", event.target.value)} placeholder="Flat 2, 10 High Street" />
+            <input autoComplete="street-address" value={form.address} required onChange={(event) => update("address", event.target.value)} placeholder="Flat 2, 10 High Street" />
           </label>
           <label>
             Postcode
-            <input value={form.postcode} onChange={(event) => update("postcode", event.target.value)} placeholder="BS1 1AA" />
+            <input autoComplete="postal-code" value={form.postcode} required onChange={(event) => update("postcode", event.target.value)} placeholder="BS1 1AA" />
           </label>
         </section>
 
@@ -141,11 +157,11 @@ export default function BookingApp() {
           </div>
           <label>
             Date
-            <input min={today} type="date" value={form.date} onChange={(event) => update("date", event.target.value)} />
+            <input min={today} type="date" value={form.date} required onChange={(event) => update("date", event.target.value)} />
           </label>
           <label>
             Time
-            <select value={form.time} onChange={(event) => update("time", event.target.value)}>
+            <select value={form.time} required onChange={(event) => update("time", event.target.value)}>
               <option>09:00</option>
               <option>11:30</option>
               <option>14:00</option>
@@ -154,15 +170,15 @@ export default function BookingApp() {
           </label>
           <label>
             Name
-            <input value={form.name} onChange={(event) => update("name", event.target.value)} placeholder="Your name" />
+            <input autoComplete="name" value={form.name} required onChange={(event) => update("name", event.target.value)} placeholder="Your name" />
           </label>
           <label>
             Email
-            <input type="email" value={form.email} onChange={(event) => update("email", event.target.value)} placeholder="you@example.com" />
+            <input autoComplete="email" type="email" value={form.email} required onChange={(event) => update("email", event.target.value)} placeholder="you@example.com" />
           </label>
           <label>
             Phone
-            <input value={form.phone} onChange={(event) => update("phone", event.target.value)} placeholder="+44..." />
+            <input autoComplete="tel" inputMode="tel" value={form.phone} required onChange={(event) => update("phone", event.target.value)} placeholder="+44..." />
           </label>
           <label className="full">
             Notes
@@ -180,13 +196,19 @@ export default function BookingApp() {
           <div><dt>Service</dt><dd>{service.name}</dd></div>
           <div><dt>Slot</dt><dd>{form.date} at {form.time}</dd></div>
           <div><dt>Property</dt><dd>{form.bedrooms} bed, {form.bathrooms} bath</dd></div>
+          <div><dt>Duration</dt><dd>{service.duration}</dd></div>
           <div className="total"><dt>Total</dt><dd>GBP {price}</dd></div>
         </dl>
-        <button className="button button-primary wide" disabled={status === "loading"} onClick={submitBooking} type="button">
+        <div className="booking-assurance" aria-label="Booking reassurance">
+          <span><CheckCircle2 size={16} /> Secure checkout</span>
+          <span><CheckCircle2 size={16} /> Confirmation by email</span>
+          <span><CheckCircle2 size={16} /> Change requests supported</span>
+        </div>
+        <button className="button button-primary wide" disabled={status === "loading" || !canSubmit} onClick={submitBooking} type="button">
           {status === "loading" ? "Creating booking..." : "Continue to payment"}
         </button>
         {message && <p className={status === "error" ? "form-message error" : "form-message"}>{message}</p>}
-        <p className="secure-note"><UserRound size={16} /> Stripe Checkout handles cards, Apple Pay, and Google Pay where available.</p>
+        <p className="secure-note"><UserRound size={16} /> Your details are used only to arrange and manage the clean. Card payment is handled through secure checkout when available.</p>
       </aside>
     </div>
   );

@@ -1,11 +1,9 @@
-import type { Handler } from "@netlify/functions";
+﻿import type { Handler } from "@netlify/functions";
 import Stripe from "stripe";
-import { json, parseBody } from "./_shared";
+import { getSupabase, json, parseBody } from "./_shared";
 
 type CheckoutPayload = {
   bookingId: string;
-  amount: number;
-  serviceName: string;
 };
 
 export const handler: Handler = async (event) => {
@@ -13,7 +11,7 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = parseBody<CheckoutPayload>(event.body);
-    if (!body.bookingId || !body.amount || !body.serviceName) return json(400, { error: "Missing checkout details" });
+    if (!body.bookingId) return json(400, { error: "Missing checkout details" });
 
     const secret = process.env.STRIPE_SECRET_KEY;
     const siteUrl = process.env.PUBLIC_SITE_URL || process.env.URL || "http://localhost:4321";
@@ -25,17 +23,28 @@ export const handler: Handler = async (event) => {
       });
     }
 
+    const supabase = getSupabase();
+    if (!supabase) return json(503, { error: "Supabase must be configured before live checkout is enabled" });
+
+    const { data: booking, error } = await supabase
+      .from("bookings")
+      .select("id, service_name, total_amount")
+      .eq("id", body.bookingId)
+      .single();
+
+    if (error || !booking) return json(404, { error: "Booking not found" });
+
     const stripe = new Stripe(secret);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       success_url: `${siteUrl}/booking/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/booking/cancelled`,
       metadata: {
-        booking_id: body.bookingId
+        booking_id: booking.id
       },
       payment_intent_data: {
         metadata: {
-          booking_id: body.bookingId
+          booking_id: booking.id
         }
       },
       line_items: [
@@ -43,9 +52,9 @@ export const handler: Handler = async (event) => {
           quantity: 1,
           price_data: {
             currency: "gbp",
-            unit_amount: Math.round(body.amount * 100),
+            unit_amount: Math.round(Number(booking.total_amount) * 100),
             product_data: {
-              name: body.serviceName
+              name: booking.service_name
             }
           }
         }

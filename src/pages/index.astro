@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from "../components/layout/BaseLayout.astro";
 import { services } from "../data/services";
 import { reviews } from "../data/reviews";
@@ -7,17 +7,17 @@ import { reviews } from "../data/reviews";
 <BaseLayout>
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow">Cash-free cleaning for modern homes</p>
+      <p class="eyebrow">Bristol home cleaning, booked online</p>
       <h1>Silva Cleaning</h1>
-      <p class="hero-text">Book reliable home, deep, and end-of-tenancy cleaning in a few taps. Clear prices, fast confirmation, and secure online payments.</p>
+      <p class="hero-text">Reliable regular, deep, and end-of-tenancy cleaning with clear prices, fast confirmation, and secure cash-free payment.</p>
       <div class="hero-actions">
         <a class="button button-primary" href="/booking">Book a clean</a>
         <a class="button button-secondary" href="/services">View services</a>
       </div>
       <div class="trust-row" aria-label="Service highlights">
-        <span>Online payments</span>
-        <span>Mobile-first booking</span>
-        <span>Reviewed cleaners</span>
+        <span>Secure online payment</span>
+        <span>Domestic and tenancy cleans</span>
+        <span>Fast mobile booking</span>
       </div>
     </div>
     <div class="hero-media" aria-label="Cleaner preparing a bright kitchen">
@@ -29,10 +29,20 @@ import { reviews } from "../data/reviews";
     </div>
   </section>
 
+  <section class="proof-strip" aria-label="Silva Cleaning proof points">
+    <div><strong>3</strong><span>Core services</span></div>
+    <div><strong>24h</strong><span>Typical confirmation</span></div>
+    <div><strong>100%</strong><span>Cash-free checkout</span></div>
+    <div><strong>Bristol</strong><span>Local coverage</span></div>
+  </section>
+
   <section class="section reveal">
     <div class="section-heading">
-      <p class="eyebrow">Services</p>
-      <h2>Pick the clean that fits the job</h2>
+      <div>
+        <p class="eyebrow">Services</p>
+        <h2>Pick the clean that fits the job</h2>
+      </div>
+      <a class="text-link" href="/services">Compare all services</a>
     </div>
     <div class="service-grid">
       {services.map((service) => (
@@ -41,11 +51,12 @@ import { reviews } from "../data/reviews";
             <h3>{service.name}</h3>
             <p>{service.description}</p>
           </div>
+          <p class="best-for">{service.bestFor}</p>
           <ul>
             {service.highlights.map((item) => <li>{item}</li>)}
           </ul>
           <div class="card-footer">
-            <span>From GBP {service.basePrice}</span>
+            <span>From &pound;{service.basePrice}</span>
             <a href={`/booking?service=${service.id}`}>Book</a>
           </div>
         </article>
@@ -65,15 +76,32 @@ import { reviews } from "../data/reviews";
     </div>
   </section>
 
+  <section class="section quality-band reveal">
+    <div>
+      <p class="eyebrow">Quality standard</p>
+      <h2>Cleaner homes, clearer expectations</h2>
+      <p>Every booking collects the details cleaners need before arrival: property size, access notes, timing, and the exact service selected.</p>
+    </div>
+    <div class="quality-list">
+      <span>Transparent starting prices</span>
+      <span>Secure checkout when Stripe is enabled</span>
+      <span>Receipts and booking records</span>
+      <span>Admin dashboard for managing jobs</span>
+    </div>
+  </section>
+
   <section class="section reveal">
     <div class="section-heading">
-      <p class="eyebrow">Reviews</p>
-      <h2>Built around trust</h2>
+      <div>
+        <p class="eyebrow">Reviews</p>
+        <h2>Built around trust</h2>
+      </div>
+      <a class="text-link" href="/reviews">Read reviews</a>
     </div>
     <div class="review-grid">
       {reviews.map((review) => (
         <article class="review-card">
-          <div class="stars">★★★★★</div>
+          <div class="stars" aria-label="Five star review">*****</div>
           <p>"{review.text}"</p>
           <strong>{review.name}</strong>
           <span>{review.area}</span>

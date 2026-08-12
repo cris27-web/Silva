@@ -1,9 +1,8 @@
-import type { Handler } from "@netlify/functions";
-import { getSupabase, json, parseBody } from "./_shared";
+﻿import type { Handler } from "@netlify/functions";
+import { calculateBookingTotal, getSupabase, json, parseBody } from "./_shared";
 
 type BookingPayload = {
   serviceId: string;
-  serviceName: string;
   bedrooms: number;
   bathrooms: number;
   date: string;
@@ -14,7 +13,6 @@ type BookingPayload = {
   address: string;
   postcode: string;
   notes?: string;
-  totalAmount: number;
 };
 
 export const handler: Handler = async (event) => {
@@ -22,14 +20,19 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = parseBody<BookingPayload>(event.body);
-    const required = [body.serviceId, body.serviceName, body.date, body.time, body.name, body.email, body.address, body.postcode];
+    const required = [body.serviceId, body.date, body.time, body.name, body.email, body.address, body.postcode];
     if (required.some((value) => !value)) return json(400, { error: "Missing required booking details" });
+
+    const pricedBooking = calculateBookingTotal(body.serviceId, body.bedrooms, body.bathrooms);
+    if (!pricedBooking) return json(400, { error: "Unknown service selected" });
 
     const supabase = getSupabase();
     if (!supabase) {
       return json(200, {
         id: `demo-${Date.now()}`,
         demo: true,
+        amount: pricedBooking.totalAmount,
+        serviceName: pricedBooking.service.name,
         message: "Demo booking created. Add Supabase keys to store live bookings."
       });
     }
@@ -38,9 +41,9 @@ export const handler: Handler = async (event) => {
       .from("bookings")
       .insert({
         service_id: body.serviceId,
-        service_name: body.serviceName,
-        bedrooms: body.bedrooms,
-        bathrooms: body.bathrooms,
+        service_name: pricedBooking.service.name,
+        bedrooms: pricedBooking.bedrooms,
+        bathrooms: pricedBooking.bathrooms,
         booking_date: body.date,
         booking_time: body.time,
         customer_name: body.name,
@@ -49,11 +52,11 @@ export const handler: Handler = async (event) => {
         address: body.address,
         postcode: body.postcode,
         notes: body.notes,
-        total_amount: body.totalAmount,
+        total_amount: pricedBooking.totalAmount,
         status: "pending_payment",
         payment_status: "pending"
       })
-      .select("id")
+      .select("id, service_name, total_amount")
       .single();
 
     if (error) return json(500, { error: error.message });

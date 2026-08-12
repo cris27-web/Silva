@@ -1,9 +1,9 @@
----
+﻿---
 import "../../styles/global.css";
 
 const {
   title = "Silva Cleaning",
-  description = "Modern, reliable cleaning services with simple online booking."
+  description = "Reliable domestic, deep, and end-of-tenancy cleaning with clear prices and secure online booking."
 } = Astro.props;
 ---
 
@@ -13,6 +13,7 @@ const {
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#145c43" />
     <title>{title}</title>
   </head>
   <body>
@@ -25,7 +26,6 @@ const {
         <a href="/services">Services</a>
         <a href="/reviews">Reviews</a>
         <a href="/contact">Contact</a>
-        <a href="/admin">Admin</a>
       </nav>
       <a class="header-cta" href="/booking">Book now</a>
     </header>
@@ -41,6 +41,7 @@ const {
         <a href="/booking">Book cleaning</a>
         <a href="/services">Services</a>
         <a href="/reviews">Reviews</a>
+        <a href="/contact">Contact</a>
       </div>
     </footer>
     <script>
