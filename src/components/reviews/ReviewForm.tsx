@@ -1,22 +1,34 @@
-import { Send } from "lucide-react";
+﻿import { Send } from "lucide-react";
 import { useState } from "react";
 
 export default function ReviewForm() {
   const [message, setMessage] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    setStatus("loading");
+    setMessage("");
 
-    const response = await fetch("/api/submit-review", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(form))
-    });
+    try {
+      const response = await fetch("/api/submit-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(form))
+      });
 
-    const data = await response.json();
-    setMessage(data.message || "Review submitted for approval.");
-    event.currentTarget.reset();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not submit review");
+
+      setStatus("success");
+      setMessage(data.message || "Review submitted for approval.");
+      formElement.reset();
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "Could not submit review");
+    }
   };
 
   return (
@@ -27,11 +39,11 @@ export default function ReviewForm() {
       </div>
       <label>
         Name
-        <input name="customer_name" required placeholder="Your name" />
+        <input autoComplete="name" name="customer_name" required placeholder="Your name" />
       </label>
       <label>
         Rating
-        <select name="rating" defaultValue="5">
+        <select name="rating" defaultValue="5" required>
           <option value="5">5 stars</option>
           <option value="4">4 stars</option>
           <option value="3">3 stars</option>
@@ -41,8 +53,10 @@ export default function ReviewForm() {
         Comment
         <textarea name="comment" required placeholder="What went well?" />
       </label>
-      <button className="button button-primary" type="submit"><Send size={16} /> Submit review</button>
-      {message && <p className="form-message">{message}</p>}
+      <button className="button button-primary" disabled={status === "loading"} type="submit">
+        <Send size={16} /> {status === "loading" ? "Submitting..." : "Submit review"}
+      </button>
+      {message && <p className={status === "error" ? "form-message error" : "form-message"} role="status" aria-live="polite">{message}</p>}
     </form>
   );
 }

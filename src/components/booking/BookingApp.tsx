@@ -1,4 +1,4 @@
-﻿import { CalendarDays, CheckCircle2, CreditCard, Home, Sparkles, UserRound } from "lucide-react";
+import { CalendarDays, CheckCircle2, CreditCard, Home, Sparkles, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { services } from "../../data/services";
 
@@ -121,7 +121,7 @@ export default function BookingApp() {
                 type="button"
               >
                 <strong>{item.name}</strong>
-                <span>From GBP {item.basePrice} | {item.duration}</span>
+                <span>From Â£{item.basePrice} | {item.duration}</span>
               </button>
             ))}
           </div>
@@ -197,7 +197,7 @@ export default function BookingApp() {
           <div><dt>Slot</dt><dd>{form.date} at {form.time}</dd></div>
           <div><dt>Property</dt><dd>{form.bedrooms} bed, {form.bathrooms} bath</dd></div>
           <div><dt>Duration</dt><dd>{service.duration}</dd></div>
-          <div className="total"><dt>Total</dt><dd>GBP {price}</dd></div>
+          <div className="total"><dt>Total</dt><dd>Â£{price}</dd></div>
         </dl>
         <div className="booking-assurance" aria-label="Booking reassurance">
           <span><CheckCircle2 size={16} /> Secure checkout</span>
