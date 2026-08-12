@@ -1,4 +1,4 @@
-﻿import { createClient } from "@supabase/supabase-js";
+﻿import { getDatabase } from "@netlify/database";
 import { addOns, bookingSlots, calculateBookingPrice, getService } from "../../src/data/services";
 
 export type JsonResponse = {
@@ -7,11 +7,12 @@ export type JsonResponse = {
   body: string;
 };
 
+export const db = () => getDatabase();
+
 export const json = (statusCode: number, data: unknown): JsonResponse => ({
   statusCode,
   headers: {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": process.env.PUBLIC_SITE_URL || "*"
+    "Content-Type": "application/json"
   },
   body: JSON.stringify(data)
 });
@@ -21,28 +22,12 @@ export const parseBody = <T>(body: string | null): T => {
   return JSON.parse(body) as T;
 };
 
-export const isDemoMode = () => process.env.DEMO_MODE === "true";
-export const isProduction = () => process.env.CONTEXT === "production" || process.env.NODE_ENV === "production";
-
 export const missingEnv = (keys: string[]) => keys.filter((key) => !process.env[key]);
 
 export const requireEnv = (keys: string[]) => {
   const missing = missingEnv(keys);
   if (missing.length === 0) return null;
-  if (isDemoMode()) return null;
   return json(503, { error: `Missing required environment variables: ${missing.join(", ")}` });
-};
-
-export const getSupabase = () => {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !key) return null;
-  return createClient(url, key, {
-    auth: {
-      persistSession: false
-    }
-  });
 };
 
 export const requireAdmin = (authorization?: string) => {
@@ -87,6 +72,25 @@ export const validateBookingPayload = (body: {
   if (!pricedBooking) return { error: "Could not price booking" };
   return { pricedBooking };
 };
+
+export const serializeAddOns = (items: unknown) => JSON.stringify(items || []);
+
+export const parseAddOns = (items: unknown) => {
+  if (Array.isArray(items)) return items;
+  if (typeof items !== "string") return [];
+  try {
+    const parsed = JSON.parse(items);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+export const mapBookingRow = (row: Record<string, unknown>) => ({
+  ...row,
+  add_ons: parseAddOns(row.add_ons),
+  total_amount: Number(row.total_amount || 0)
+});
 
 export const demoBookings = [
   {

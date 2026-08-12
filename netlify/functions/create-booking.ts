@@ -1,5 +1,5 @@
 ﻿import type { Handler } from "@netlify/functions";
-import { getSupabase, isDemoMode, json, parseBody, requireEnv, validateBookingPayload } from "../lib/shared";
+import { db, json, parseBody, serializeAddOns, validateBookingPayload } from "../lib/shared";
 
 type BookingPayload = {
   serviceId: string;
@@ -24,58 +24,58 @@ export const handler: Handler = async (event) => {
     const validation = validateBookingPayload(body);
     if ("error" in validation) return json(400, { error: validation.error });
     const { pricedBooking } = validation;
+    const database = db();
 
-    const envError = requireEnv(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
-    const supabase = getSupabase();
-    if (envError || !supabase) {
-      if (!isDemoMode()) return envError || json(503, { error: "Supabase is not configured" });
-      return json(200, {
-        id: `demo-${Date.now()}`,
-        demo: true,
-        amount: pricedBooking.totalAmount,
-        serviceName: pricedBooking.service.name,
-        message: "Demo booking created. Set DEMO_MODE=false and add Supabase keys for live bookings."
-      });
-    }
+    const existing = await database.sql`
+      select id from bookings
+      where booking_date = ${body.date}
+        and booking_time = ${body.time}
+        and status in ('pending_payment', 'confirmed')
+      limit 1
+    `;
 
-    const { data: existing, error: lookupError } = await supabase
-      .from("bookings")
-      .select("id")
-      .eq("booking_date", body.date)
-      .eq("booking_time", body.time)
-      .in("status", ["pending_payment", "confirmed"])
-      .limit(1);
+    if (existing.length > 0) return json(409, { error: "That slot has just been booked. Choose another time." });
 
-    if (lookupError) return json(500, { error: lookupError.message });
-    if (existing && existing.length > 0) return json(409, { error: "That slot has just been booked. Choose another time." });
+    const [booking] = await database.sql`
+      insert into bookings (
+        service_id,
+        service_name,
+        bedrooms,
+        bathrooms,
+        booking_date,
+        booking_time,
+        customer_name,
+        customer_email,
+        customer_phone,
+        address,
+        postcode,
+        notes,
+        add_ons,
+        total_amount,
+        status,
+        payment_status
+      ) values (
+        ${body.serviceId},
+        ${pricedBooking.service.name},
+        ${pricedBooking.bedrooms},
+        ${pricedBooking.bathrooms},
+        ${body.date},
+        ${body.time},
+        ${body.name.trim()},
+        ${body.email.trim()},
+        ${body.phone.trim()},
+        ${body.address.trim()},
+        ${body.postcode.trim()},
+        ${body.notes || null},
+        ${serializeAddOns(pricedBooking.addOns)}::jsonb,
+        ${pricedBooking.totalAmount},
+        'pending_payment',
+        'pending'
+      ) returning id, service_name, total_amount, add_ons
+    `;
 
-    const { data, error } = await supabase
-      .from("bookings")
-      .insert({
-        service_id: body.serviceId,
-        service_name: pricedBooking.service.name,
-        bedrooms: pricedBooking.bedrooms,
-        bathrooms: pricedBooking.bathrooms,
-        booking_date: body.date,
-        booking_time: body.time,
-        customer_name: body.name.trim(),
-        customer_email: body.email.trim(),
-        customer_phone: body.phone.trim(),
-        address: body.address.trim(),
-        postcode: body.postcode.trim(),
-        notes: body.notes,
-        add_ons: pricedBooking.addOns,
-        total_amount: pricedBooking.totalAmount,
-        status: "pending_payment",
-        payment_status: "pending"
-      })
-      .select("id, service_name, total_amount, add_ons")
-      .single();
-
-    if (error) return json(500, { error: error.message });
-    return json(200, data);
+    return json(200, booking);
   } catch (error) {
     return json(500, { error: error instanceof Error ? error.message : "Unknown error" });
   }
 };
-
