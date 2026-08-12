@@ -14,8 +14,8 @@
   "dependencies": {
     "@astrojs/check": "^0.9.9",
     "@astrojs/react": "^4.4.2",
-    "@netlify/database": "^1.1.0",
     "@netlify/functions": "^2.8.2",
+    "@supabase/supabase-js": "^2.45.4",
     "astro": "^5.18.1",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",
