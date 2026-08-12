@@ -1,6 +1,6 @@
-﻿# Cleaning Business Website
+# Cleaning Business Website
 
-Production-minded local cleaning-business website built for GitHub + Netlify with service comparison, add-on booking, availability-aware slots, admin operations, reviews, Supabase-ready data, and Stripe Checkout integration.
+Production-minded local cleaning-business website built for GitHub + Netlify with service comparison, add-on booking, availability-aware slots, admin operations, reviews, Neon Postgres data, and Stripe Checkout integration.
 
 ## Free-tier stack
 
@@ -8,7 +8,7 @@ Production-minded local cleaning-business website built for GitHub + Netlify wit
 - React islands for booking, reviews, and admin interactions.
 - Netlify Free for hosting and functions.
 - GitHub Free for source control.
-- Supabase Free for database and booking/review storage.
+- Neon Free for Postgres booking/review storage.
 - Stripe for Apple Pay / Google Pay / cards with no monthly fee.
 - Optional free email provider such as Resend or Brevo.
 
@@ -25,11 +25,21 @@ For the booking/admin API routes locally, use Netlify Dev:
 npm run dev:netlify
 ```
 
-Copy `.env.example` to `.env` when you are ready to connect Supabase and Stripe.
+Copy `.env.example` to `.env` when you are ready to connect Neon and Stripe.
 
-## Demo mode and production mode
+## Neon setup
 
-Demo responses are now explicit. Set `DEMO_MODE="true"` for local demos without Supabase/Stripe. In production, set `DEMO_MODE="false"` and add the real environment variables. Missing production variables return clear errors instead of pretending a booking, review, or payment succeeded.
+1. Create a free Neon project.
+2. Copy the pooled connection string into `DATABASE_URL` locally and in Netlify environment variables.
+3. Apply the schema:
+
+```bash
+npm run migrate:neon
+```
+
+You can also paste `neon/schema.sql` into the Neon SQL editor.
+
+## Production env check
 
 Check production env locally with:
 
@@ -44,13 +54,12 @@ npm run validate:env
 3. Build command: `npm run build`.
 4. Publish directory: `dist`.
 5. Add environment variables from `.env.example`.
-6. Run `supabase/schema.sql` in the Supabase SQL editor.
-7. In Stripe, add the webhook endpoint:
+6. In Stripe, add the webhook endpoint:
    `https://your-site.netlify.app/.netlify/functions/stripe-webhook`
 
 ## Production notes
 
-- Replace `ADMIN_ACCESS_TOKEN` with Supabase Auth before scaling beyond a simple owner workflow.
+- Replace `ADMIN_ACCESS_TOKEN` with a full auth flow before scaling beyond a simple owner workflow.
 - Add real phone/email/opening hours only when you have the live business details.
 - Use real before/after photos only with customer permission.
 - Stripe Checkout can display Apple Pay / Google Pay when enabled in Stripe and supported by the customer device/browser.

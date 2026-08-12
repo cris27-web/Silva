@@ -1,24 +1,19 @@
 ﻿import type { Handler } from "@netlify/functions";
-import { bookingSlots, getSupabase, isDemoMode, isPastDate, isValidDate, json, requireEnv } from "../lib/shared";
+import { bookingSlots, isPastDate, isValidDate, json, sql } from "../lib/shared";
 
 export const handler: Handler = async (event) => {
   const date = event.queryStringParameters?.date;
   if (!date || !isValidDate(date) || isPastDate(date)) return json(400, { error: "Choose a valid future date" });
 
-  const envError = requireEnv(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
-  const supabase = getSupabase();
-  if (envError || !supabase) {
-    if (!isDemoMode()) return envError || json(503, { error: "Supabase is not configured" });
-    return json(200, { slots: bookingSlots, demo: true });
+  try {
+    const rows = await sql()`
+      select booking_time from bookings
+      where booking_date = ${date}
+        and status in ('pending_payment', 'confirmed')
+    `;
+    const booked = new Set(rows.map((booking) => String(booking.booking_time)));
+    return json(200, { slots: bookingSlots.filter((slot) => !booked.has(slot)) });
+  } catch (error) {
+    return json(500, { error: error instanceof Error ? error.message : "Could not load availability" });
   }
-
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("booking_time")
-    .eq("booking_date", date)
-    .in("status", ["pending_payment", "confirmed"]);
-
-  if (error) return json(500, { error: error.message });
-  const booked = new Set((data || []).map((booking) => booking.booking_time));
-  return json(200, { slots: bookingSlots.filter((slot) => !booked.has(slot)) });
 };

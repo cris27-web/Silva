@@ -4,8 +4,8 @@ create table if not exists bookings (
   id uuid primary key default gen_random_uuid(),
   service_id text not null,
   service_name text not null,
-  bedrooms integer not null default 1,
-  bathrooms integer not null default 1,
+  bedrooms integer not null default 1 check (bedrooms between 1 and 8),
+  bathrooms integer not null default 1 check (bathrooms between 1 and 6),
   booking_date date not null,
   booking_time text not null,
   customer_name text not null,
@@ -24,7 +24,12 @@ create table if not exists bookings (
   updated_at timestamptz not null default now()
 );
 
-alter table bookings add column if not exists add_ons jsonb not null default '[]'::jsonb;
+create unique index if not exists bookings_active_slot_idx
+  on bookings (booking_date, booking_time)
+  where status in ('pending_payment', 'confirmed');
+
+create index if not exists bookings_date_idx on bookings (booking_date, booking_time);
+create index if not exists bookings_status_idx on bookings (status);
 
 create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
@@ -37,17 +42,4 @@ create table if not exists reviews (
   created_at timestamptz not null default now()
 );
 
-alter table reviews add column if not exists area text;
-
-create index if not exists bookings_date_idx on bookings (booking_date, booking_time);
-create index if not exists bookings_status_idx on bookings (status);
 create index if not exists reviews_approved_idx on reviews (approved, created_at desc);
-
-alter table bookings enable row level security;
-alter table reviews enable row level security;
-
-create policy "Approved reviews are public"
-  on reviews for select
-  using (approved = true);
-
--- Netlify Functions use the Supabase service role key for booking/admin writes.

@@ -1,4 +1,4 @@
-﻿import { CalendarCheck, RefreshCcw, ShieldCheck } from "lucide-react";
+import { CalendarCheck, RefreshCcw, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type AddOn = {
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Unable to load bookings");
       setBookings(data.bookings);
-      setMessage(data.demo ? "Demo bookings shown. Set DEMO_MODE=false and connect Supabase for live operations." : "Live bookings loaded.");
+      setMessage(data.demo ? "Live bookings loaded." : "Live bookings loaded.");
     } catch (error) {
       setBookings([]);
       setMessage(error instanceof Error ? error.message : "Unable to load bookings");
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
       {filteredBookings.length === 0 ? (
         <div className="empty-state">
           <strong>No bookings to show</strong>
-          <p>Check the admin token, clear the filter, or connect Supabase for live booking data.</p>
+          <p>Check the admin token, clear the filter, or confirm Neon is connected.</p>
         </div>
       ) : (
         <div className="table-wrap">
@@ -135,3 +135,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
