@@ -1,28 +1,55 @@
 ﻿---
 import BaseLayout from "../components/layout/BaseLayout.astro";
-import { services } from "../data/services";
+import { addOns, services } from "../data/services";
 ---
 
 <BaseLayout title="Services | Silva Cleaning">
   <section class="page-hero compact">
     <p class="eyebrow">Services</p>
-    <h1>Clear options, clear prices</h1>
-    <p>Start with a service, add property details during booking, and confirm online. Each clean is priced from a simple base rate, then adjusted for bedrooms and bathrooms.</p>
+    <h1>Clear options, clearer decisions</h1>
+    <p>Start with the clean that matches the job, then use add-ons to reserve time for details such as oven cleaning, cupboards, pet hair, or interior windows.</p>
   </section>
   <section class="section reveal">
-    <div class="service-grid">
+    <div class="service-comparison">
       {services.map((service) => (
-        <article class="service-card large">
-          <h2>{service.name}</h2>
-          <p>{service.description}</p>
-          <p class="best-for">{service.bestFor}</p>
-          <ul>
-            {service.highlights.map((item) => <li>{item}</li>)}
-          </ul>
-          <div class="card-footer">
-            <span>From &pound;{service.basePrice} · {service.duration}</span>
-            <a href={`/booking?service=${service.id}`}>Book this clean</a>
+        <article class="service-card large comparison-card">
+          <div>
+            <p class="eyebrow">From &pound;{service.basePrice} · {service.duration}</p>
+            <h2>{service.name}</h2>
+            <p>{service.description}</p>
           </div>
+          <p class="best-for">{service.bestFor}</p>
+          <div class="comparison-columns">
+            <div>
+              <strong>Included</strong>
+              <ul>{service.included.map((item) => <li>{item}</li>)}</ul>
+            </div>
+            <div>
+              <strong>Not included</strong>
+              <ul>{service.notIncluded.map((item) => <li>{item}</li>)}</ul>
+            </div>
+          </div>
+          <p class="price-note">{service.priceNotes}</p>
+          <div class="card-footer">
+            <span>Suggested add-ons: {service.suggestedAddOns.length}</span>
+            <a class="mini-button" href={`/booking?service=${service.id}`}>Book this clean</a>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+  <section class="section reveal">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Add-ons</p>
+        <h2>Reserve time for the details</h2>
+      </div>
+    </div>
+    <div class="addon-grid public-addons">
+      {addOns.map((addOn) => (
+        <article class="addon-card display-only">
+          <span><strong>{addOn.name}</strong><small>{addOn.description}</small></span>
+          <b>&pound;{addOn.price}</b>
         </article>
       ))}
     </div>
@@ -32,6 +59,6 @@ import { services } from "../data/services";
       <p class="eyebrow">Before arrival</p>
       <h2>Good details make the clean smoother</h2>
     </div>
-    <p>Add parking, access, pets, and priority areas during booking so the team can arrive prepared.</p>
+    <p>Add parking, access, pets, priority areas, and property condition notes during booking so the team can arrive prepared.</p>
   </section>
 </BaseLayout>

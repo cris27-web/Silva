@@ -42,6 +42,10 @@ export default function ReviewForm() {
         <input autoComplete="name" name="customer_name" required placeholder="Your name" />
       </label>
       <label>
+        Area
+        <input autoComplete="address-level2" name="area" placeholder="Bristol, Clifton, Redland..." />
+      </label>
+      <label>
         Rating
         <select name="rating" defaultValue="5" required>
           <option value="5">5 stars</option>

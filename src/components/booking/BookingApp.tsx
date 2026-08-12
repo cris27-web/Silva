@@ -1,6 +1,6 @@
-import { CalendarDays, CheckCircle2, CreditCard, Home, Sparkles, UserRound } from "lucide-react";
-import { useMemo, useState } from "react";
-import { services } from "../../data/services";
+﻿import { CalendarDays, CheckCircle2, CreditCard, Home, Sparkles, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { addOns, bookingSlots, calculateBookingPrice, services } from "../../data/services";
 
 type BookingForm = {
   serviceId: string;
@@ -14,58 +14,94 @@ type BookingForm = {
   address: string;
   postcode: string;
   notes: string;
+  addOns: string[];
 };
 
-const today = new Date().toISOString().slice(0, 10);
+const getToday = () => new Date().toISOString().slice(0, 10);
 
 const getInitialServiceId = () => {
   if (typeof window === "undefined") return services[0].id;
   return new URLSearchParams(window.location.search).get("service") || services[0].id;
 };
 
-const initialForm: BookingForm = {
+const createInitialForm = (): BookingForm => ({
   serviceId: getInitialServiceId(),
   bedrooms: 2,
   bathrooms: 1,
-  date: today,
+  date: typeof window === "undefined" ? "" : getToday(),
   time: "09:00",
   name: "",
   email: "",
   phone: "",
   address: "",
   postcode: "",
-  notes: ""
-};
+  notes: "",
+  addOns: []
+});
 
 export default function BookingApp() {
-  const [form, setForm] = useState<BookingForm>(initialForm);
+  const [form, setForm] = useState<BookingForm>(createInitialForm);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [availableSlots, setAvailableSlots] = useState<string[]>(bookingSlots);
+  const [availabilityMessage, setAvailabilityMessage] = useState("");
+
+  useEffect(() => {
+    setForm((current) => current.date ? current : { ...current, date: getToday() });
+  }, []);
 
   const service = services.find((item) => item.id === form.serviceId) || services[0];
-  const price = useMemo(() => {
-    const roomCost = Math.max(0, form.bedrooms - 1) * 12 + Math.max(0, form.bathrooms - 1) * 10;
-    return service.basePrice + roomCost;
-  }, [form.bathrooms, form.bedrooms, service.basePrice]);
+  const price = useMemo(() => calculateBookingPrice(form.serviceId, form.bedrooms, form.bathrooms, form.addOns), [form.addOns, form.bathrooms, form.bedrooms, form.serviceId]);
 
-  const canSubmit = Boolean(
-    form.name.trim() &&
-    form.email.includes("@") &&
-    form.phone.trim() &&
-    form.address.trim() &&
-    form.postcode.trim() &&
-    form.date &&
-    form.time
-  );
+  useEffect(() => {
+    if (!form.date) return;
 
-  const update = (field: keyof BookingForm, value: string | number) => {
+    const controller = new AbortController();
+    setAvailabilityMessage("Checking available slots...");
+
+    fetch(`/api/get-availability?date=${encodeURIComponent(form.date)}`, { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load availability");
+        const slots = Array.isArray(data.slots) ? data.slots : bookingSlots;
+        setAvailableSlots(slots);
+        setAvailabilityMessage(data.demo ? "Demo availability shown." : "Available slots loaded.");
+        if (slots.length > 0 && !slots.includes(form.time)) update("time", slots[0]);
+      })
+      .catch((error) => {
+        if (error.name === "AbortError") return;
+        setAvailableSlots(bookingSlots);
+        setAvailabilityMessage(error instanceof Error ? error.message : "Could not load availability");
+      });
+
+    return () => controller.abort();
+  }, [form.date]);
+
+  const missingFields = [
+    !form.name.trim() && "name",
+    !form.email.includes("@") && "email",
+    !form.phone.trim() && "phone",
+    !form.address.trim() && "address",
+    !form.postcode.trim() && "postcode"
+  ].filter(Boolean) as string[];
+
+  const canSubmit = Boolean(form.date && form.time && availableSlots.includes(form.time) && missingFields.length === 0);
+
+  const update = (field: keyof BookingForm, value: string | number | string[]) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
+  const toggleAddOn = (id: string) => {
+    setForm((current) => ({
+      ...current,
+      addOns: current.addOns.includes(id) ? current.addOns.filter((item) => item !== id) : [...current.addOns, id]
+    }));
+  };
+
   const submitBooking = async () => {
-    if (!canSubmit) {
+    if (!canSubmit || !price) {
       setStatus("error");
-      setMessage("Add your contact, address, postcode, and phone before continuing.");
+      setMessage(missingFields.length ? `Add ${missingFields.join(", ")} before continuing.` : "Choose an available time before continuing.");
       return;
     }
 
@@ -79,8 +115,8 @@ export default function BookingApp() {
         body: JSON.stringify({ ...form })
       });
 
-      if (!bookingResponse.ok) throw new Error("Could not create booking");
       const booking = await bookingResponse.json();
+      if (!bookingResponse.ok) throw new Error(booking.error || "Could not create booking");
 
       const paymentResponse = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -88,8 +124,8 @@ export default function BookingApp() {
         body: JSON.stringify({ bookingId: booking.id })
       });
 
-      if (!paymentResponse.ok) throw new Error("Could not start payment");
       const payment = await paymentResponse.json();
+      if (!paymentResponse.ok) throw new Error(payment.error || "Could not start payment");
 
       if (payment.url) {
         window.location.href = payment.url;
@@ -104,9 +140,17 @@ export default function BookingApp() {
     }
   };
 
+  const selectedSuggestedAddOns = addOns.filter((addOn) => service.suggestedAddOns.includes(addOn.id));
+  const otherAddOns = addOns.filter((addOn) => !service.suggestedAddOns.includes(addOn.id));
+  const progress = ["Service", "Property", "Contact", "Confirm"];
+
   return (
     <div className="booking-widget">
       <div className="booking-main">
+        <div className="booking-progress" aria-label="Booking progress">
+          {progress.map((step, index) => <span key={step}>{index + 1}. {step}</span>)}
+        </div>
+
         <section className="booking-panel">
           <div className="panel-title">
             <Sparkles size={20} />
@@ -121,7 +165,7 @@ export default function BookingApp() {
                 type="button"
               >
                 <strong>{item.name}</strong>
-                <span>From Â£{item.basePrice} | {item.duration}</span>
+                <span>From GBP {item.basePrice} | {item.duration}</span>
               </button>
             ))}
           </div>
@@ -150,6 +194,23 @@ export default function BookingApp() {
           </label>
         </section>
 
+        <section className="booking-panel">
+          <div className="panel-title">
+            <Sparkles size={20} />
+            <h2>Add-ons</h2>
+          </div>
+          <p className="panel-note">Reserve extra time for the details that matter most. These are estimates and will be confirmed before live payment.</p>
+          <div className="addon-grid">
+            {[...selectedSuggestedAddOns, ...otherAddOns].map((addOn) => (
+              <label className={form.addOns.includes(addOn.id) ? "addon-card selected" : "addon-card"} key={addOn.id}>
+                <input type="checkbox" checked={form.addOns.includes(addOn.id)} onChange={() => toggleAddOn(addOn.id)} />
+                <span><strong>{addOn.name}</strong><small>{addOn.description}</small></span>
+                <b>GBP {addOn.price}</b>
+              </label>
+            ))}
+          </div>
+        </section>
+
         <section className="booking-panel grid-two">
           <div className="panel-title full">
             <CalendarDays size={20} />
@@ -157,17 +218,15 @@ export default function BookingApp() {
           </div>
           <label>
             Date
-            <input min={today} type="date" value={form.date} required onChange={(event) => update("date", event.target.value)} />
+            <input min={getToday()} type="date" value={form.date} required onChange={(event) => update("date", event.target.value)} />
           </label>
           <label>
             Time
             <select value={form.time} required onChange={(event) => update("time", event.target.value)}>
-              <option>09:00</option>
-              <option>11:30</option>
-              <option>14:00</option>
-              <option>16:30</option>
+              {availableSlots.map((slot) => <option key={slot}>{slot}</option>)}
             </select>
           </label>
+          <p className="panel-note full" aria-live="polite">{availabilityMessage}</p>
           <label>
             Name
             <input autoComplete="name" value={form.name} required onChange={(event) => update("name", event.target.value)} placeholder="Your name" />
@@ -182,7 +241,7 @@ export default function BookingApp() {
           </label>
           <label className="full">
             Notes
-            <textarea value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder="Pets, parking, access notes..." />
+            <textarea value={form.notes} onChange={(event) => update("notes", event.target.value)} placeholder="Pets, parking, access notes, priority areas..." />
           </label>
         </section>
       </div>
@@ -190,24 +249,36 @@ export default function BookingApp() {
       <aside className="booking-summary">
         <div className="panel-title">
           <CreditCard size={20} />
-          <h2>Summary</h2>
+          <h2>Estimate</h2>
         </div>
-        <dl>
-          <div><dt>Service</dt><dd>{service.name}</dd></div>
-          <div><dt>Slot</dt><dd>{form.date} at {form.time}</dd></div>
-          <div><dt>Property</dt><dd>{form.bedrooms} bed, {form.bathrooms} bath</dd></div>
-          <div><dt>Duration</dt><dd>{service.duration}</dd></div>
-          <div className="total"><dt>Total</dt><dd>Â£{price}</dd></div>
-        </dl>
+        {price && (
+          <dl>
+            <div><dt>Service</dt><dd>{service.name}</dd></div>
+            <div><dt>Base price</dt><dd>GBP {service.basePrice}</dd></div>
+            <div><dt>Property</dt><dd>GBP {price.propertyAdjustment}</dd></div>
+            <div><dt>Add-ons</dt><dd>GBP {price.addOnsTotal}</dd></div>
+            <div><dt>Slot</dt><dd>{form.date || "Choose date"} at {form.time}</dd></div>
+            <div><dt>Duration</dt><dd>{service.duration}</dd></div>
+            <div className="total"><dt>Estimated total</dt><dd>GBP {price.totalAmount}</dd></div>
+          </dl>
+        )}
+        {price && price.addOns.length > 0 && (
+          <ul className="summary-list">
+            {price.addOns.map((addOn) => <li key={addOn.id}>{addOn.name}</li>)}
+          </ul>
+        )}
         <div className="booking-assurance" aria-label="Booking reassurance">
-          <span><CheckCircle2 size={16} /> Secure checkout</span>
+          <span><CheckCircle2 size={16} /> Secure checkout when live keys are configured</span>
           <span><CheckCircle2 size={16} /> Confirmation by email</span>
           <span><CheckCircle2 size={16} /> Change requests supported</span>
         </div>
+        {!canSubmit && (
+          <p className="missing-fields" aria-live="polite">{missingFields.length ? `Add ${missingFields.join(", ")} to continue.` : "Choose an available slot to continue."}</p>
+        )}
         <button className="button button-primary wide" disabled={status === "loading" || !canSubmit} onClick={submitBooking} type="button">
           {status === "loading" ? "Creating booking..." : "Continue to payment"}
         </button>
-        {message && <p className={status === "error" ? "form-message error" : "form-message"}>{message}</p>}
+        {message && <p className={status === "error" ? "form-message error" : "form-message"} role="status" aria-live="polite">{message}</p>}
         <p className="secure-note"><UserRound size={16} /> Your details are used only to arrange and manage the clean. Card payment is handled through secure checkout when available.</p>
       </aside>
     </div>

@@ -1,4 +1,4 @@
----
+﻿---
 import BaseLayout from "../components/layout/BaseLayout.astro";
 import { services } from "../data/services";
 import { reviews } from "../data/reviews";
@@ -9,31 +9,30 @@ import { reviews } from "../data/reviews";
     <div class="hero-copy">
       <p class="eyebrow">Bristol home cleaning, booked online</p>
       <h1>Silva Cleaning</h1>
-      <p class="hero-text">Thoughtful regular, deep, and end-of-tenancy cleaning for Bristol homes, with clear prices, careful arrival notes, and secure cash-free booking.</p>
+      <p class="hero-text">Thoughtful regular, deep, and end-of-tenancy cleaning for Bristol homes, with clear estimates, careful arrival notes, and secure cash-free booking when live payment is configured.</p>
       <div class="hero-actions">
         <a class="button button-primary" href="/booking">Book a clean</a>
         <a class="button button-secondary" href="/services">View services</a>
       </div>
       <div class="trust-row" aria-label="Service highlights">
-        <span>Secure online payment</span>
-        <span>Domestic and tenancy cleans</span>
-        <span>Fast mobile booking</span>
+        <span>Bristol and nearby postcodes</span>
+        <span>Receipts provided when payment is live</span>
+        <span>Access notes captured</span>
       </div>
     </div>
     <div class="hero-media" aria-label="Cleaner preparing a bright kitchen">
-      <div class="shine-line"></div>
       <div class="hero-badge">
-        <strong>4.9/5</strong>
-        <span>Average review</span>
+        <strong>Clear online booking</strong>
+        <span>Domestic and tenancy cleans</span>
       </div>
     </div>
   </section>
 
   <section class="proof-strip" aria-label="Silva Cleaning proof points">
-    <div><strong>3</strong><span>Core services</span></div>
-    <div><strong>24h</strong><span>Typical confirmation</span></div>
-    <div><strong>100%</strong><span>Cash-free checkout</span></div>
-    <div><strong>Bristol</strong><span>Local coverage</span></div>
+    <div><strong>Bristol</strong><span>Nearby postcodes covered</span></div>
+    <div><strong>Receipts</strong><span>Clear records for every job</span></div>
+    <div><strong>Secure</strong><span>Cash-free checkout when configured</span></div>
+    <div><strong>Prepared</strong><span>Access notes captured</span></div>
   </section>
 
   <section class="section reveal">
@@ -53,11 +52,12 @@ import { reviews } from "../data/reviews";
           </div>
           <p class="best-for">{service.bestFor}</p>
           <ul>
-            {service.highlights.map((item) => <li>{item}</li>)}
+            {service.included.slice(0, 3).map((item) => <li>{item}</li>)}
           </ul>
+          <p class="price-note">{service.priceNotes}</p>
           <div class="card-footer">
-            <span>From &pound;{service.basePrice}</span>
-            <a href={`/booking?service=${service.id}`}>Book</a>
+            <span>From &pound;{service.basePrice} · {service.duration}</span>
+            <a class="mini-button" href={`/booking?service=${service.id}`}>Book</a>
           </div>
         </article>
       ))}
@@ -71,8 +71,8 @@ import { reviews } from "../data/reviews";
     </div>
     <div class="steps">
       <div><span>1</span><strong>Choose service</strong><p>Select a regular, deep, or tenancy clean.</p></div>
-      <div><span>2</span><strong>Pick a slot</strong><p>Choose a date and time that works for you.</p></div>
-      <div><span>3</span><strong>Pay online</strong><p>Confirm securely through Stripe Checkout.</p></div>
+      <div><span>2</span><strong>Pick add-ons and slot</strong><p>Add oven, fridge, cupboards, windows, or priority areas.</p></div>
+      <div><span>3</span><strong>Confirm details</strong><p>Send access notes and continue to secure checkout when configured.</p></div>
     </div>
   </section>
 
@@ -80,13 +80,27 @@ import { reviews } from "../data/reviews";
     <div>
       <p class="eyebrow">Quality standard</p>
       <h2>Cleaner homes, clearer expectations</h2>
-      <p>Every booking collects the details cleaners need before arrival: property size, access notes, timing, and the exact service selected.</p>
+      <p>Every booking collects the details cleaners need before arrival: property size, add-ons, access notes, timing, and the exact service selected.</p>
     </div>
     <div class="quality-list">
       <span>Transparent starting prices</span>
-      <span>Secure checkout when available</span>
+      <span>Server-checked estimates</span>
       <span>Receipts and booking records</span>
       <span>Job notes kept organised</span>
+    </div>
+  </section>
+
+  <section class="section gallery-band reveal">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Before and after</p>
+        <h2>Ready for real job photos</h2>
+      </div>
+    </div>
+    <div class="gallery-grid">
+      <article><span>Before</span><strong>Kitchen reset</strong><p>Add a real customer-approved photo here.</p></article>
+      <article><span>After</span><strong>Bathroom detail</strong><p>Use verified images only when permission is clear.</p></article>
+      <article><span>After</span><strong>Move-out clean</strong><p>Pair photos with service type and area when available.</p></article>
     </div>
   </section>
 
@@ -101,10 +115,10 @@ import { reviews } from "../data/reviews";
     <div class="review-grid">
       {reviews.map((review) => (
         <article class="review-card">
-          <div class="stars" aria-label="Five star review">*****</div>
+          <div class="stars" aria-label={`${review.rating} star review`}>{"*".repeat(review.rating)}</div>
           <p>"{review.text}"</p>
           <strong>{review.name}</strong>
-          <span>{review.area}</span>
+          <span>{review.area} · {review.source} · {review.date}</span>
         </article>
       ))}
     </div>

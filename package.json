@@ -8,7 +8,8 @@
     "dev:netlify": "npx netlify dev --port 8888 --targetPort 4321",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "validate:env": "node scripts/validate-env.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
